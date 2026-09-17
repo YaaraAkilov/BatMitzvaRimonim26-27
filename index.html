@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>בת מצווה – שכבת ו׳</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FBF8F4;
+    --surface:#FFFFFF;
+    --text:#2B2420;
+    --text-muted:#8A8178;
+    --border:#E8E1D8;
+    --available:#4F7A5C;
+    --available-bg:#E7F0E9;
+    --booked:#C4677A;
+    --booked-bg:#F7E7EA;
+    --accent:#8B5E83;
+    --accent-bg:#F1E7EF;
+    --shadow: 0 2px 14px rgba(43,36,32,0.07);
+    --radius: 18px;
+    --radius-sm: 12px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1E1A17; --surface:#2A2420; --text:#F3EEE7; --text-muted:#B3A99C;
+      --border:#3A322C; --available:#86BF92; --available-bg:#243128;
+      --booked:#E695A4; --booked-bg:#3A2730; --accent:#C9A6C3; --accent-bg:#33283A;
+      --shadow:0 2px 14px rgba(0,0,0,0.45);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1E1A17; --surface:#2A2420; --text:#F3EEE7; --text-muted:#B3A99C;
+    --border:#3A322C; --available:#86BF92; --available-bg:#243128;
+    --booked:#E695A4; --booked-bg:#3A2730; --accent:#C9A6C3; --accent-bg:#33283A;
+    --shadow:0 2px 14px rgba(0,0,0,0.45);
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Assistant',sans-serif;
+    font-size:16px;
+    line-height:1.5;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x:hidden;
+    min-height:100vh;
+  }
+  h1,h2,h3{font-family:'Frank Ruhl Libre',serif; margin:0; font-weight:700;}
+  #app{max-width:520px; margin:0 auto; min-height:100vh; padding-bottom:84px; position:relative;}
+
+  .topbar{padding:22px 20px 10px;}
+  .topbar h1{font-size:24px;}
+  .topbar .sub{color:var(--text-muted); font-size:14.5px; margin-top:6px;}
+  .topbar .hint{color:var(--text-muted); font-size:13px; margin-top:10px; background:var(--surface); border:1px solid var(--border); padding:10px 14px; border-radius:var(--radius-sm);}
+
+  .section{padding:0 20px; margin-top:18px;}
+  .section-title{font-size:15px; color:var(--text-muted); font-weight:600; margin-bottom:10px;}
+
+  .btn-primary{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    background:var(--accent); color:#fff; border:none; border-radius:var(--radius-sm);
+    padding:16px; font-size:17px; font-weight:700; width:100%; cursor:pointer;
+    font-family:inherit;
+  }
+  .btn-primary:active{opacity:0.85;}
+  .btn-secondary{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    background:var(--surface); color:var(--text); border:1.5px solid var(--border); border-radius:var(--radius-sm);
+    padding:15px; font-size:16px; font-weight:600; width:100%; cursor:pointer; font-family:inherit;
+  }
+  .btn-text{background:none; border:none; color:var(--accent); font-weight:600; font-size:15px; cursor:pointer; font-family:inherit; padding:8px;}
+  .btn-danger-text{background:none; border:none; color:var(--booked); font-weight:600; font-size:15px; cursor:pointer; font-family:inherit; padding:8px;}
+
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow);}
+
+  /* calendar */
+  .cal-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+  .cal-header button{background:var(--surface); border:1px solid var(--border); border-radius:10px; width:40px; height:40px; font-size:18px; color:var(--text); cursor:pointer;}
+  .cal-header .month-label{font-family:'Frank Ruhl Libre',serif; font-size:19px; font-weight:700;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px;}
+  .cal-dow{text-align:center; font-size:12px; color:var(--text-muted); font-weight:600; padding-bottom:4px;}
+  .cal-cell{aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:12px; font-size:13px; position:relative; cursor:pointer; padding:2px; overflow:hidden;}
+  .cal-cell.empty{cursor:default;}
+  .cal-cell .daynum{font-weight:600; font-size:13.5px;}
+  .cal-cell.free{background:var(--available-bg); color:var(--available);}
+  .cal-cell.booked{background:var(--booked-bg); color:var(--booked);}
+  .cal-cell.past{opacity:0.4;}
+  .cal-cell .label{font-size:9.5px; margin-top:1px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600;}
+  .cal-legend{display:flex; gap:16px; margin-top:12px; font-size:13px; color:var(--text-muted);}
+  .legend-dot{display:inline-block; width:10px; height:10px; border-radius:50%; margin-left:6px; vertical-align:middle;}
+
+  /* upcoming list */
+  .event-row{display:flex; align-items:center; gap:12px; padding:14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:10px; cursor:pointer;}
+  .event-row .icon{font-size:22px;}
+  .event-row .info{flex:1; min-width:0;}
+  .event-row .date{font-weight:700; font-size:14.5px;}
+  .event-row .who{color:var(--text-muted); font-size:13.5px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .event-row .chev{color:var(--text-muted);}
+
+  .empty-state{text-align:center; padding:40px 20px; color:var(--text-muted);}
+  .empty-state .emoji{font-size:40px; margin-bottom:10px;}
+  .empty-state h3{color:var(--text); margin-bottom:6px; font-size:18px;}
+
+  /* bottom nav */
+  .bottom-nav{position:fixed; bottom:0; left:0; right:0; max-width:520px; margin:0 auto; background:var(--surface); border-top:1px solid var(--border); display:flex; z-index:50;}
+  .nav-item{flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 0 8px; background:none; border:none; color:var(--text-muted); font-family:inherit; font-size:11.5px; cursor:pointer;}
+  .nav-item.active{color:var(--accent); font-weight:700;}
+  .nav-item .ic{font-size:20px;}
+
+  /* forms */
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:14px; font-weight:600; margin-bottom:6px; color:var(--text);}
+  .field .opt{color:var(--text-muted); font-weight:400;}
+  .field input, .field select, .field textarea{
+    width:100%; padding:14px; border:1.5px solid var(--border); border-radius:var(--radius-sm);
+    font-size:16px; font-family:inherit; background:var(--surface); color:var(--text);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent);}
+  .field textarea{min-height:70px; resize:vertical;}
+
+  .type-cards{display:flex; gap:12px; margin-top:14px;}
+  .type-card{flex:1; background:var(--surface); border:2px solid var(--border); border-radius:var(--radius); padding:20px 12px; text-align:center; cursor:pointer;}
+  .type-card.selected{border-color:var(--accent); background:var(--accent-bg);}
+  .type-card .emoji{font-size:30px; display:block; margin-bottom:8px;}
+  .type-card .title{font-weight:700; font-size:15px;}
+  .type-card .sub{font-size:12.5px; color:var(--text-muted); margin-top:3px;}
+
+  .celebrant-block{border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:14px; background:var(--surface);}
+  .celebrant-block .head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .celebrant-block .head h3{font-size:15px; font-family:'Assistant'; font-weight:700;}
+
+  .topnav{display:flex; align-items:center; gap:10px; padding:16px 20px 4px;}
+  .topnav button.back{background:none; border:none; font-size:22px; color:var(--text); cursor:pointer; padding:4px;}
+  .topnav h2{font-size:18px;}
+
+  .banner-error{background:var(--booked-bg); color:var(--booked); padding:12px 14px; border-radius:var(--radius-sm); font-size:14.5px; font-weight:600; margin-bottom:14px;}
+  .banner-success{background:var(--available-bg); color:var(--available); padding:12px 14px; border-radius:var(--radius-sm); font-size:14.5px; font-weight:600; margin-bottom:14px;}
+
+  .code-display{background:var(--accent-bg); border-radius:var(--radius); padding:20px; text-align:center; margin:18px 0;}
+  .code-display .code{font-size:34px; font-weight:700; letter-spacing:4px; color:var(--accent); font-family:'Frank Ruhl Libre',serif; margin:8px 0;}
+
+  .detail-row{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:14.5px;}
+  .detail-row:last-child{border-bottom:none;}
+  .detail-row .k{color:var(--text-muted);}
+  .contact-card{display:flex; align-items:center; justify-content:space-between; padding:12px; border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:10px;}
+  .contact-card .name{font-weight:700; font-size:14.5px;}
+  .contact-card .phone{color:var(--text-muted); font-size:13px; margin-top:2px;}
+  .contact-actions{display:flex; gap:8px;}
+  .icon-btn{width:38px; height:38px; border-radius:10px; border:1px solid var(--border); background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:17px; text-decoration:none; color:var(--text);}
+
+  .search-box{width:100%; padding:13px 16px; border:1.5px solid var(--border); border-radius:14px; font-size:16px; margin-bottom:16px; background:var(--surface); color:var(--text); font-family:inherit;}
+  .divider-label{font-size:13px; color:var(--text-muted); font-weight:600; margin:22px 0 10px;}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(30,25,20,0.5); display:flex; align-items:flex-end; justify-content:center; z-index:100;}
+  .modal-sheet{background:var(--surface); width:100%; max-width:520px; border-radius:22px 22px 0 0; padding:22px 20px 26px; box-shadow:0 -4px 20px rgba(0,0,0,0.2);}
+  .modal-sheet h3{font-size:18px; margin-bottom:10px;}
+  .modal-sheet p{font-size:14.5px; color:var(--text-muted); margin-bottom:18px;}
+  .modal-actions{display:flex; gap:10px;}
+
+  a{color:inherit;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- config ---------- */
+  var CLASSES = ["ו׳1","ו׳2","ו׳3","ו׳4"];
+  var STORAGE_KEY = "bm_scheduler_events_v1";
+
+  /* ---------- data layer (swap this for Supabase later without touching the UI) ---------- */
+  var DataLayer = {
+    _read: function(){
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+      catch(e){ return []; }
+    },
+    _write: function(events){ localStorage.setItem(STORAGE_KEY, JSON.stringify(events)); },
+    getAll: function(){ return this._read(); },
+    getActive: function(){ return this._read().filter(function(e){ return e.status === "active"; }); },
+    getById: function(id){ return this._read().find(function(e){ return e.id === id; }) || null; },
+    isDateTaken: function(date, excludeId){
+      return this.getActive().some(function(e){ return e.date === date && e.id !== excludeId; });
+    },
+    create: function(event){
+      var events = this._read(); // re-read fresh right before checking, to catch same-browser races
+      if(events.some(function(e){ return e.status === "active" && e.date === event.date; })){
+        return { ok:false, reason:"taken" };
+      }
+      events.push(event);
+      this._write(events);
+      return { ok:true, event: event };
+    },
+    update: function(id, patch){
+      var events = this._read();
+      var idx = events.findIndex(function(e){ return e.id === id; });
+      if(idx === -1) return { ok:false, reason:"notfound" };
+      if(patch.date && patch.date !== events[idx].date){
+        var taken = events.some(function(e){ return e.id !== id && e.status === "active" && e.date === patch.date; });
+        if(taken) return { ok:false, reason:"taken" };
+      }
+      var updated = Object.assign({}, events[idx], patch, { updatedAt: Date.now() });
+      events[idx] = updated;
+      this._write(events);
+      return { ok:true, event: updated };
+    },
+    verifyCode: function(id, code){
+      var e = this.getById(id);
+      return !!e && e.editCode === String(code).trim();
+    }
+  };
+
+  /* ---------- utils ---------- */
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+  function genCode(){ return String(Math.floor(100000 + Math.random()*900000)); }
+  function pad(n){ return n < 10 ? "0"+n : ""+n; }
+  function toISO(d){ return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
+  function fromISO(s){ var p = s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function displayDate(iso){ var p = iso.split("-"); return p[2] + "/" + p[1] + "/" + p[0]; }
+  function todayISO(){ return toISO(new Date()); }
+  function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function celebrantNames(ev){ return ev.celebrants.map(function(c){ return c.firstName + " " + c.lastName; }); }
+  function celebrantsShort(ev){
+    var names = ev.celebrants.map(function(c){ return c.firstName + " " + c.lastName; });
+    if(ev.eventType === "single") return names[0] || "";
+    return names.join(" + ");
+  }
+  function normalizePhone(p){
+    var digits = (p||"").replace(/\D/g,"");
+    if(digits.indexOf("0") === 0) digits = "972" + digits.slice(1);
+    return digits;
+  }
+  function telHref(p){ return "tel:" + (p||"").replace(/\s/g,""); }
+  function waHref(p, text){ return "https://wa.me/" + normalizePhone(p) + (text ? "?text=" + encodeURIComponent(text) : ""); }
+  var HEB_MONTHS = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
+  var HEB_DOW = ["א","ב","ג","ד","ה","ו","ש"];
+
+  /* ---------- app state ---------- */
+  var state = {
+    screen: "home",              // home | all | book | detail | edit
+    calMonth: new Date().getMonth(),
+    calYear: new Date().getFullYear(),
+    bookStep: "type",            // type | celebrants | details | success
+    bookType: "single",
+    celebrants: [ blankCelebrant() ],
+    eventDate: null,
+    eventStartTime: "",
+    eventEndTime: "",
+    eventVenue: "",
+    eventNotes: "",
+    editingEventId: null,
+    lastCreated: null,
+    detailEventId: null,
+    searchQuery: "",
+    formError: "",
+    codeModal: null,             // { eventId, purpose: 'edit'|'cancel' }
+    codeInput: "",
+    codeError: "",
+    confirmCancelId: null
+  };
+
+  function blankCelebrant(){
+    return { id: uid(), firstName:"", lastName:"", className:"", parent1Name:"", parent1Phone:"", parent2Name:"", parent2Phone:"", showParent2:false };
+  }
+
+  function render(){ document.getElementById("app").innerHTML = screens[state.screen]() + bottomNav() + modals(); }
+  window.A = {}; // action namespace exposed to inline handlers
+
+  /* ---------- bottom nav ---------- */
+  function bottomNav(){
+    if(["book"].includes(state.screen)) return "";
+    function item(key, icon, label, screen){
+      var active = state.screen === screen ? "active" : "";
+      return '<button class="nav-item '+active+'" onclick="A.go(\''+screen+'\')"><span class="ic">'+icon+'</span>'+label+'</button>';
+    }
+    return '<div class="bottom-nav">' +
+      item("home","🏠","לוח שנה","home") +
+      item("all","📅","כל האירועים","all") +
+      item("book","➕","שריון","book") +
+      '</div>';
+  }
+
+  /* ---------- screens ---------- */
+  var screens = {};
+
+  screens.home = function(){
+    var active = DataLayer.getActive();
+    var upcoming = active.filter(function(e){ return e.date >= todayISO(); }).sort(function(a,b){ return a.date.localeCompare(b.date); }).slice(0,3);
+    var html = '';
+    html += '<div class="topbar"><h1>🎉 בת מצווה – שכבת ו׳</h1>' +
+      '<div class="sub">מתאמים יחד כדי שלא יהיו שתי מסיבות באותו יום 💗</div>' +
+      '<div class="hint">כל תאריך יכול להיות משוריין למסיבה אחת בלבד. מסיבה משותפת יכולה לכלול עד 4 חוגגות.</div></div>';
+    html += '<div class="section">' +
+      '<button class="btn-primary" onclick="A.startBooking()">+ שריון תאריך</button>' +
+      '</div>';
+    html += '<div class="section">' + calendarWidget() + '</div>';
+    html += '<div class="section"><button class="btn-secondary" onclick="A.findFree()">📅 מצא תאריך פנוי</button></div>';
+    html += '<div class="section"><div class="section-title">האירועים הקרובים</div>';
+    if(upcoming.length === 0){
+      html += '<div class="empty-state" style="padding:24px 10px;"><div class="emoji">🎉</div><h3>עדיין אין תאריכים משוריינים</h3><div>תהיו הראשונים לבחור תאריך!</div></div>';
+    } else {
+      upcoming.forEach(function(ev){ html += eventRow(ev); });
+    }
+    html += '</div>';
+    return html;
+  };
+
+  function eventRow(ev){
+    var icon = ev.eventType === "shared" ? "👭" : "🎉";
+    var who = ev.eventType === "shared" ? "מסיבה משותפת • " + celebrantsShort(ev) : celebrantsShort(ev) + " • " + ev.celebrants[0].className;
+    var time = ev.startTime ? (" • " + ev.startTime + (ev.endTime ? "–"+ev.endTime : "")) : "";
+    return '<div class="event-row" onclick="A.openDetail(\''+ev.id+'\')">' +
+      '<div class="icon">'+icon+'</div>' +
+      '<div class="info"><div class="date">'+displayDate(ev.date)+time+'</div><div class="who">'+escapeHtml(who)+'</div></div>' +
+      '<div class="chev">‹</div></div>';
+  }
+
+  function calendarWidget(){
+    var y = state.calYear, m = state.calMonth;
+    var first = new Date(y, m, 1);
+    var startDow = first.getDay();
+    var daysInMonth = new Date(y, m+1, 0).getDate();
+    var active = DataLayer.getActive();
+    var byDate = {};
+    active.forEach(function(e){ byDate[e.date] = e; });
+    var today = todayISO();
+
+    var html = '<div class="card"><div class="cal-header">' +
+      '<button onclick="A.prevMonth()">‹</button>' +
+      '<div class="month-label">'+HEB_MONTHS[m]+' '+y+'</div>' +
+      '<button onclick="A.nextMonth()">›</button></div>';
+    html += '<div class="cal-grid">';
+    HEB_DOW.forEach(function(d){ html += '<div class="cal-dow">'+d+'</div>'; });
+    for(var i=0;i<startDow;i++){ html += '<div class="cal-cell empty"></div>'; }
+    for(var d=1; d<=daysInMonth; d++){
+      var iso = y + "-" + pad(m+1) + "-" + pad(d);
+      var ev = byDate[iso];
+      var isPast = iso < today;
+      var cls = "cal-cell " + (ev ? "booked" : "free") + (isPast ? " past" : "");
+      var label = "";
+      if(ev){ label = ev.eventType === "shared" ? "משותף" : celebrantsShort(ev).split(" ")[0]; }
+      html += '<div class="'+cls+'" onclick="A.dayClick(\''+iso+'\')"><div class="daynum">'+d+'</div>' + (label ? '<div class="label">'+escapeHtml(label)+'</div>' : '') + '</div>';
+    }
+    html += '</div>';
+    html += '<div class="cal-legend"><span><span class="legend-dot" style="background:var(--available)"></span>פנוי</span><span><span class="legend-dot" style="background:var(--booked)"></span>תפוס</span></div>';
+    html += '</div>';
+    return html;
+  }
+
+  screens.all = function(){
+    var all = DataLayer.getActive().sort(function(a,b){ return a.date.localeCompare(b.date); });
+    var today = todayISO();
+    var q = state.searchQuery.trim().toLowerCase();
+    function matches(ev){
+      if(!q) return true;
+      return ev.celebrants.some(function(c){
+        return (c.firstName+" "+c.lastName).toLowerCase().indexOf(q) !== -1 ||
+               (c.className||"").toLowerCase().indexOf(q) !== -1;
+      });
+    }
+    var upcoming = all.filter(function(e){ return e.date >= today && matches(e); });
+    var past = all.filter(function(e){ return e.date < today && matches(e); });
+
+    var html = '<div class="topbar"><h1>כל האירועים</h1></div>';
+    html += '<div class="section">' +
+      '<input class="search-box" placeholder="חיפוש לפי שם או כיתה..." value="'+escapeHtml(state.searchQuery)+'" oninput="A.search(this.value)">';
+    if(upcoming.length === 0 && past.length === 0){
+      html += '<div class="empty-state"><div class="emoji">🔎</div><h3>לא נמצאו אירועים</h3></div>';
+    } else {
+      if(upcoming.length){
+        html += '<div class="section-title">קרובים</div>';
+        upcoming.forEach(function(ev){ html += eventCardFull(ev); });
+      }
+      if(past.length){
+        html += '<div class="divider-label">אירועים שהתקיימו</div>';
+        past.forEach(function(ev){ html += eventCardFull(ev); });
+      }
+    }
+    html += '</div>';
+    return html;
+  };
+
+  function eventCardFull(ev){
+    var icon = ev.eventType === "shared" ? "👭" : "🎉";
+    var classesTxt = ev.eventType === "shared" ? ev.celebrants.map(function(c){return c.className;}).join(", ") : ev.celebrants[0].className;
+    return '<div class="card" style="margin-bottom:12px; cursor:pointer;" onclick="A.openDetail(\''+ev.id+'\')">' +
+      '<div style="display:flex; justify-content:space-between; align-items:flex-start;">' +
+      '<div><div style="font-weight:700; font-size:15px;">'+icon+' '+escapeHtml(celebrantsShort(ev))+'</div>' +
+      '<div style="color:var(--text-muted); font-size:13.5px; margin-top:4px;">'+escapeHtml(classesTxt)+'</div></div>' +
+      '<div style="font-weight:700; font-size:14px;">'+displayDate(ev.date)+'</div></div>' +
+      (ev.startTime || ev.venue ? '<div style="color:var(--text-muted); font-size:13px; margin-top:8px;">' + (ev.startTime ? "🕗 "+ev.startTime+(ev.endTime?"–"+ev.endTime:"") : "") + (ev.venue ? "  📍 "+escapeHtml(ev.venue) : "") + '</div>' : '') +
+      '</div>';
+  }
+
+  /* ---------- booking flow ---------- */
+  screens.book = function(){
+    var html = '<div class="topnav"><button class="back" onclick="A.cancelBooking()">›</button><h2>שריון תאריך</h2></div>';
+    if(state.bookStep === "type") html += bookStepType();
+    else if(state.bookStep === "celebrants") html += bookStepCelebrants();
+    else if(state.bookStep === "details") html += bookStepDetails();
+    else if(state.bookStep === "success") html += bookStepSuccess();
+    return html;
+  };
+
+  function bookStepType(){
+    var html = '<div class="section"><h3 style="font-size:17px; margin-bottom:4px;">איזו מסיבה אתם מתכננים?</h3>';
+    html += '<div class="type-cards">' +
+      '<div class="type-card '+(state.bookType==='single'?'selected':'')+'" onclick="A.setBookType(\'single\')">' +
+      '<span class="emoji">👧</span><div class="title">מסיבה אישית</div><div class="sub">חוגגת אחת</div></div>' +
+      '<div class="type-card '+(state.bookType==='shared'?'selected':'')+'" onclick="A.setBookType(\'shared\')">' +
+      '<span class="emoji">👭</span><div class="title">מסיבה משותפת</div><div class="sub">2–4 חוגגות יחד</div></div>' +
+      '</div></div>';
+    html += '<div class="section"><button class="btn-primary" onclick="A.toCelebrantsStep()">המשך</button></div>';
+    return html;
+  }
+
+  function celebrantFields(c, idx, removable){
+    var i = idx;
+    function f(field, label, type, required, opt){
+      var val = escapeHtml(c[field] || "");
+      var reqAttr = required ? "required" : "";
+      return '<div class="field"><label>'+label+(opt?' <span class="opt">(אופציונלי)</span>':'')+'</label>' +
+        '<input type="'+type+'" value="'+val+'" '+reqAttr+' oninput="A.setCelebrantField('+i+',\''+field+'\',this.value)"></div>';
+    }
+    var classOptions = CLASSES.map(function(cl){ return '<option value="'+cl+'" '+(c.className===cl?'selected':'')+'>'+cl+'</option>'; }).join("");
+    var html = '<div class="celebrant-block"><div class="head"><h3>חוגגת '+(state.bookType==='shared' ? (idx+1) : '')+'</h3>' +
+      (removable ? '<button class="btn-danger-text" onclick="A.removeCelebrant('+i+')">הסרה</button>' : '') + '</div>';
+    html += f("firstName","שם פרטי","text",true);
+    html += f("lastName","שם משפחה","text",true);
+    html += '<div class="field"><label>כיתה</label><select required oninput="A.setCelebrantField('+i+',\'className\',this.value)"><option value="">בחרו כיתה</option>'+classOptions+'</select></div>';
+    html += f("parent1Name","שם הורה","text",true);
+    html += f("parent1Phone","טלפון","tel",true);
+    if(c.showParent2){
+      html += f("parent2Name","הורה נוסף","text",false,true);
+      html += f("parent2Phone","טלפון נוסף","tel",false,true);
+    } else {
+      html += '<button type="button" class="btn-text" onclick="A.showParent2('+i+')">+ הוספת הורה נוסף</button>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function bookStepCelebrants(){
+    var html = '<div class="section">';
+    if(state.formError) html += '<div class="banner-error">'+state.formError+'</div>';
+    if(state.bookType === "shared") html += '<p style="color:var(--text-muted); font-size:14px; margin-bottom:14px;">מסיבה משותפת יכולה לכלול 2–4 חוגגות.</p>';
+    state.celebrants.forEach(function(c, idx){
+      html += celebrantFields(c, idx, state.bookType === "shared" && state.celebrants.length > 2);
+    });
+    if(state.bookType === "shared" && state.celebrants.length < 4){
+      html += '<button class="btn-secondary" style="margin-bottom:16px;" onclick="A.addCelebrant()">+ הוספת חוגגת</button>';
+    }
+    html += '<button class="btn-primary" onclick="A.toDetailsStep()">המשך</button>';
+    html += '</div>';
+    return html;
+  }
+
+  function bookStepDetails(){
+    var html = '<div class="section">';
+    if(state.formError) html += '<div class="banner-error">'+state.formError+'</div>';
+    html += '<h3 style="font-size:17px; margin-bottom:14px;">פרטי האירוע</h3>';
+    html += '<div class="field"><label>תאריך</label><input type="date" value="'+(state.eventDate||"")+'" onchange="A.setDetail(\'eventDate\',this.value)"></div>';
+    html += '<div class="field"><label>שעת התחלה <span class="opt">(אופציונלי)</span></label><input type="time" value="'+state.eventStartTime+'" oninput="A.setDetail(\'eventStartTime\',this.value)"></div>';
+    html += '<div class="field"><label>שעת סיום <span class="opt">(אופציונלי)</span></label><input type="time" value="'+state.eventEndTime+'" oninput="A.setDetail(\'eventEndTime\',this.value)"></div>';
+    html += '<div class="field"><label>מקום / אולם <span class="opt">(אופציונלי)</span></label><input type="text" value="'+escapeHtml(state.eventVenue)+'" oninput="A.setDetail(\'eventVenue\',this.value)"></div>';
+    html += '<div class="field"><label>הערות <span class="opt">(אופציונלי)</span></label><textarea oninput="A.setDetail(\'eventNotes\',this.value)">'+escapeHtml(state.eventNotes)+'</textarea></div>';
+    html += '<button class="btn-primary" onclick="A.submitBooking()">'+(state.editingEventId ? 'שמירת שינויים' : '🎉 שריון התאריך')+'</button>';
+    html += '</div>';
+    return html;
+  }
+
+  function bookStepSuccess(){
+    var ev = state.lastCreated;
+    var msg = "שריינו תאריך ל" + celebrantsShort(ev) + " בתאריך " + displayDate(ev.date) + ". קוד עריכה: " + ev.editCode;
+    var html = '<div class="section">' +
+      '<div class="banner-success">🎉 התאריך נשמר בהצלחה!</div>' +
+      '<div class="code-display"><div style="font-size:14px; color:var(--text-muted);">🔐 קוד העריכה שלכם</div>' +
+      '<div class="code">'+ev.editCode+'</div>' +
+      '<div style="font-size:13px; color:var(--text-muted);">שמרו את הקוד. הוא יאפשר לכם לערוך או לבטל את האירוע בעתיד.</div></div>' +
+      '<button class="btn-secondary" style="margin-bottom:10px;" onclick="A.copyCode(\''+ev.editCode+'\')">📋 העתקת קוד</button>' +
+      '<a class="btn-secondary" style="margin-bottom:10px; text-decoration:none;" href="'+waHref(ev.celebrants[0].parent1Phone, msg)+'" target="_blank">📲 שיתוף ב-WhatsApp</a>' +
+      '<button class="btn-primary" onclick="A.finishBooking()">סיום</button>' +
+      '</div>';
+    return html;
+  }
+
+  /* ---------- event detail ---------- */
+  screens.detail = function(){
+    var ev = DataLayer.getById(state.detailEventId);
+    if(!ev) return '<div class="section"><p>האירוע לא נמצא.</p></div>';
+    var icon = ev.eventType === "shared" ? "👭" : "🎉";
+    var html = '<div class="topnav"><button class="back" onclick="A.go(\'home\')">›</button><h2>פרטי אירוע</h2></div>';
+    html += '<div class="section">';
+    html += '<div class="card"><h3 style="font-size:19px; margin-bottom:2px;">'+icon+' '+(ev.eventType==='shared' ? 'מסיבה משותפת' : escapeHtml(celebrantsShort(ev)))+'</h3>';
+    if(ev.eventType === 'shared') html += '<div style="color:var(--text-muted); margin-bottom:10px; font-size:14.5px;">'+escapeHtml(celebrantsShort(ev))+'</div>';
+    html += '<div class="detail-row"><span class="k">תאריך</span><span>'+displayDate(ev.date)+'</span></div>';
+    if(ev.startTime) html += '<div class="detail-row"><span class="k">שעה</span><span>'+ev.startTime+(ev.endTime?"–"+ev.endTime:"")+'</span></div>';
+    if(ev.venue) html += '<div class="detail-row"><span class="k">מקום</span><span>'+escapeHtml(ev.venue)+'</span></div>';
+    ev.celebrants.forEach(function(c){
+      html += '<div class="detail-row"><span class="k">כיתה — '+escapeHtml(c.firstName+" "+c.lastName)+'</span><span>'+escapeHtml(c.className)+'</span></div>';
+    });
+    if(ev.notes) html += '<div class="detail-row"><span class="k">הערות</span><span>'+escapeHtml(ev.notes)+'</span></div>';
+    html += '</div>';
+
+    html += '<div class="section-title" style="margin-top:20px;">יצירת קשר</div>';
+    ev.celebrants.forEach(function(c){
+      html += contactCard(c.parent1Name, c.parent1Phone, c.firstName+" "+c.lastName);
+      if(c.parent2Name) html += contactCard(c.parent2Name, c.parent2Phone, c.firstName+" "+c.lastName);
+    });
+
+    html += '<div style="display:flex; gap:10px; margin-top:20px;">' +
+      '<button class="btn-secondary" onclick="A.requestCode(\''+ev.id+'\',\'edit\')">✏️ עריכת אירוע</button>' +
+      '<button class="btn-secondary" style="color:var(--booked);" onclick="A.requestCode(\''+ev.id+'\',\'cancel\')">ביטול אירוע</button>' +
+      '</div>';
+    html += '</div>';
+    return html;
+  };
+
+  function contactCard(name, phone, forWhom){
+    if(!name) return "";
+    return '<div class="contact-card"><div><div class="name">'+escapeHtml(name)+'</div><div class="phone">'+escapeHtml(phone||"")+'</div></div>' +
+      '<div class="contact-actions">' +
+      (phone ? '<a class="icon-btn" href="'+telHref(phone)+'">📞</a><a class="icon-btn" href="'+waHref(phone)+'" target="_blank">💬</a>' : '') +
+      '</div></div>';
+  }
+
+  /* ---------- edit screen reuses booking steps ---------- */
+  screens.edit = function(){
+    var html = '<div class="topnav"><button class="back" onclick="A.openDetail(state_editingEventId())" >›</button><h2>עריכת אירוע</h2></div>';
+    html += bookStepCelebrantsForEdit();
+    return html;
+  };
+  function state_editingEventId(){ return state.editingEventId; }
+
+  function bookStepCelebrantsForEdit(){
+    // combined celebrants + details in one screen for editing simplicity
+    var html = '<div class="section">';
+    if(state.formError) html += '<div class="banner-error">'+state.formError+'</div>';
+    state.celebrants.forEach(function(c, idx){
+      html += celebrantFields(c, idx, state.bookType === "shared" && state.celebrants.length > 2);
+    });
+    if(state.bookType === "shared" && state.celebrants.length < 4){
+      html += '<button class="btn-secondary" style="margin-bottom:16px;" onclick="A.addCelebrant()">+ הוספת חוגגת</button>';
+    }
+    html += '<div class="divider-label">פרטי האירוע</div>';
+    html += '<div class="field"><label>תאריך</label><input type="date" value="'+(state.eventDate||"")+'" onchange="A.setDetail(\'eventDate\',this.value)"></div>';
+    html += '<div class="field"><label>שעת התחלה</label><input type="time" value="'+state.eventStartTime+'" oninput="A.setDetail(\'eventStartTime\',this.value)"></div>';
+    html += '<div class="field"><label>שעת סיום</label><input type="time" value="'+state.eventEndTime+'" oninput="A.setDetail(\'eventEndTime\',this.value)"></div>';
+    html += '<div class="field"><label>מקום / אולם</label><input type="text" value="'+escapeHtml(state.eventVenue)+'" oninput="A.setDetail(\'eventVenue\',this.value)"></div>';
+    html += '<div class="field"><label>הערות</label><textarea oninput="A.setDetail(\'eventNotes\',this.value)">'+escapeHtml(state.eventNotes)+'</textarea></div>';
+    html += '<button class="btn-primary" onclick="A.saveEdit()">שמירת שינויים</button>';
+    html += '</div>';
+    return html;
+  }
+
+  /* ---------- modals ---------- */
+  function modals(){
+    var html = "";
+    if(state.codeModal){
+      var title = state.codeModal.purpose === "cancel" ? "ביטול אירוע" : "עריכת אירוע";
+      html += '<div class="modal-overlay"><div class="modal-sheet">' +
+        '<h3>'+title+'</h3><p>הזינו את קוד העריכה בן 6 הספרות שקיבלתם בעת השריון.</p>';
+      if(state.codeError) html += '<div class="banner-error">'+state.codeError+'</div>';
+      html += '<div class="field"><input type="text" inputmode="numeric" maxlength="6" placeholder="קוד עריכה" value="'+escapeHtml(state.codeInput)+'" oninput="A.setCodeInput(this.value)"></div>' +
+        '<div class="modal-actions"><button class="btn-secondary" onclick="A.closeCodeModal()">ביטול</button>' +
+        '<button class="btn-primary" onclick="A.submitCode()">אישור</button></div>' +
+        '</div></div>';
+    }
+    if(state.confirmCancelId){
+      html += '<div class="modal-overlay"><div class="modal-sheet">' +
+        '<h3>ביטול אירוע</h3><p>האם אתם בטוחים שברצונכם לבטל את האירוע? התאריך יחזור להיות פנוי לכולם.</p>' +
+        '<div class="modal-actions"><button class="btn-secondary" onclick="A.closeConfirmCancel()">חזרה</button>' +
+        '<button class="btn-primary" style="background:var(--booked);" onclick="A.doCancelEvent()">כן, לבטל</button></div>' +
+        '</div></div>';
+    }
+    return html;
+  }
+
+  /* ---------- actions ---------- */
+  A.go = function(screen){
+    state.screen = screen;
+    state.searchQuery = state.searchQuery; // keep
+    render();
+    window.scrollTo(0,0);
+  };
+
+  A.prevMonth = function(){ state.calMonth--; if(state.calMonth<0){state.calMonth=11; state.calYear--;} render(); };
+  A.nextMonth = function(){ state.calMonth++; if(state.calMonth>11){state.calMonth=0; state.calYear++;} render(); };
+
+  A.findFree = function(){
+    var d = new Date();
+    state.calMonth = d.getMonth(); state.calYear = d.getFullYear();
+    A.go("home");
+  };
+
+  A.dayClick = function(iso){
+    var ev = DataLayer.getById ? DataLayer.getActive().find(function(e){return e.date===iso;}) : null;
+    if(ev){ A.openDetail(ev.id); }
+    else { A.startBooking(iso); }
+  };
+
+  A.startBooking = function(presetDate){
+    state.screen = "book";
+    state.bookStep = "type";
+    state.bookType = "single";
+    state.celebrants = [ blankCelebrant() ];
+    state.eventDate = presetDate || null;
+    state.eventStartTime = ""; state.eventEndTime = ""; state.eventVenue = ""; state.eventNotes = "";
+    state.editingEventId = null;
+    state.formError = "";
+    render();
+  };
+
+  A.cancelBooking = function(){ A.go("home"); };
+
+  A.setBookType = function(t){
+    state.bookType = t;
+    if(t === "shared" && state.celebrants.length < 2){
+      state.celebrants = [state.celebrants[0] || blankCelebrant(), blankCelebrant()];
+    }
+    if(t === "single"){ state.celebrants = [state.celebrants[0] || blankCelebrant()]; }
+    render();
+  };
+
+  A.toCelebrantsStep = function(){ state.bookStep = "celebrants"; state.formError = ""; render(); };
+
+  A.setCelebrantField = function(idx, field, value){ state.celebrants[idx][field] = value; };
+  A.showParent2 = function(idx){ state.celebrants[idx].showParent2 = true; render(); };
+  A.addCelebrant = function(){ if(state.celebrants.length < 4){ state.celebrants.push(blankCelebrant()); render(); } };
+  A.removeCelebrant = function(idx){ state.celebrants.splice(idx,1); render(); };
+
+  function validateCelebrants(){
+    if(state.bookType === "shared" && state.celebrants.length < 2) return "מסיבה משותפת חייבת לכלול לפחות 2 חוגגות.";
+    for(var i=0;i<state.celebrants.length;i++){
+      var c = state.celebrants[i];
+      if(!c.firstName || !c.lastName || !c.className || !c.parent1Name || !c.parent1Phone){
+        return "נא למלא את כל השדות המסומנים כחובה.";
+      }
+    }
+    return null;
+  }
+
+  A.toDetailsStep = function(){
+    var err = validateCelebrants();
+    if(err){ state.formError = err; render(); return; }
+    state.formError = "";
+    state.bookStep = "details";
+    render();
+  };
+
+  A.setDetail = function(field, value){ state[field] = value; };
+
+  A.submitBooking = function(){
+    if(!state.eventDate){ state.formError = "נא לבחור תאריך."; render(); return; }
+    if(DataLayer.isDateTaken(state.eventDate)){
+      state.formError = "⚠️ התאריך תפוס. בחרו תאריך אחר.";
+      render();
+      return;
+    }
+    var event = {
+      id: uid(),
+      date: state.eventDate,
+      startTime: state.eventStartTime,
+      endTime: state.eventEndTime,
+      venue: state.eventVenue,
+      notes: state.eventNotes,
+      eventType: state.bookType,
+      status: "active",
+      editCode: genCode(),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      celebrants: state.celebrants.map(function(c){ return Object.assign({}, c); })
+    };
+    var res = DataLayer.create(event);
+    if(!res.ok){
+      state.formError = "⚠️ התאריך נתפס בינתיים. האירוע נשמר על ידי משפחה אחרת.";
+      render();
+      return;
+    }
+    state.lastCreated = event;
+    state.bookStep = "success";
+    render();
+  };
+
+  A.copyCode = function(code){
+    if(navigator.clipboard){ navigator.clipboard.writeText(code); }
+    alert("הקוד הועתק: " + code);
+  };
+
+  A.finishBooking = function(){ A.go("home"); };
+
+  A.openDetail = function(id){ state.detailEventId = id; state.screen = "detail"; render(); window.scrollTo(0,0); };
+
+  A.search = function(v){ state.searchQuery = v; render(); };
+
+  /* code verification modal */
+  A.requestCode = function(eventId, purpose){
+    state.codeModal = { eventId: eventId, purpose: purpose };
+    state.codeInput = "";
+    state.codeError = "";
+    render();
+  };
+  A.setCodeInput = function(v){ state.codeInput = v; };
+  A.closeCodeModal = function(){ state.codeModal = null; render(); };
+
+  A.submitCode = function(){
+    var m = state.codeModal;
+    if(!DataLayer.verifyCode(m.eventId, state.codeInput)){
+      state.codeError = "קוד שגוי. נסו שוב.";
+      render();
+      return;
+    }
+    var purpose = m.purpose;
+    var eventId = m.eventId;
+    state.codeModal = null;
+    if(purpose === "cancel"){
+      state.confirmCancelId = eventId;
+      render();
+    } else {
+      openEditForm(eventId);
+    }
+  };
+
+  function openEditForm(eventId){
+    var ev = DataLayer.getById(eventId);
+    if(!ev) return;
+    state.editingEventId = eventId;
+    state.bookType = ev.eventType;
+    state.celebrants = ev.celebrants.map(function(c){ return Object.assign({}, c, { showParent2: !!c.parent2Name }); });
+    state.eventDate = ev.date;
+    state.eventStartTime = ev.startTime || "";
+    state.eventEndTime = ev.endTime || "";
+    state.eventVenue = ev.venue || "";
+    state.eventNotes = ev.notes || "";
+    state.formError = "";
+    state.screen = "edit";
+    render();
+  }
+
+  A.saveEdit = function(){
+    var err = validateCelebrants();
+    if(err){ state.formError = err; render(); return; }
+    if(!state.eventDate){ state.formError = "נא לבחור תאריך."; render(); return; }
+    var patch = {
+      date: state.eventDate,
+      startTime: state.eventStartTime,
+      endTime: state.eventEndTime,
+      venue: state.eventVenue,
+      notes: state.eventNotes,
+      eventType: state.bookType,
+      celebrants: state.celebrants.map(function(c){ return Object.assign({}, c); })
+    };
+    var res = DataLayer.update(state.editingEventId, patch);
+    if(!res.ok){
+      state.formError = "⚠️ התאריך תפוס על ידי אירוע אחר. השינוי לא בוצע.";
+      render();
+      return;
+    }
+    A.openDetail(state.editingEventId);
+  };
+
+  A.closeConfirmCancel = function(){ state.confirmCancelId = null; render(); };
+  A.doCancelEvent = function(){
+    var id = state.confirmCancelId;
+    DataLayer.update(id, { status: "cancelled" });
+    state.confirmCancelId = null;
+    A.go("home");
+  };
+
+  /* ---------- init ---------- */
+  render();
+})();
+</script>
+</body>
+</html>
